@@ -1,0 +1,7 @@
+rootProject.name = 'stream-viewer'
+
+include ':common'
+include ':stream-to-kafka'
+include ':kafka-to-zip'
+include ':viewer'
+

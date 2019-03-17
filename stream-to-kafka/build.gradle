@@ -1,0 +1,45 @@
+buildscript {
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+    maven {
+      url "http://packages.confluent.io/maven/"
+    }
+  }
+
+  dependencies {
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.3.RELEASE")
+  }
+}
+
+ext {
+  confluentVersion = '5.0.0'
+  kafkaVersion = '2.0.0'
+  avroVersion = '1.8.2'
+  avro4sVersion = "1.6.4"
+}
+
+configurations.all {
+   // exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+//    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+//    exclude group: 'org.springframework.boot', module: 'logback-classic'
+}
+
+dependencies {
+  compile("org.springframework.boot:spring-boot-starter-web")
+  compile("org.springframework.boot:spring-boot-starter-jersey")
+  compile group: 'org.apache.kafka', name: 'kafka-clients', version: '1.1.1'
+  compile "org.apache.kafka:connect-json:$kafkaVersion"
+  compile "io.confluent:kafka-connect-avro-converter:$confluentVersion"
+  compile "io.confluent:kafka-schema-registry:$confluentVersion"
+  compile "org.apache.avro:avro:$avroVersion"
+  compile group: 'kafka-avro-confluent', name: 'kafka-avro-confluent', version: '0.1.0'
+  compile "org.apache.avro:avro:1.8.1"
+  compile 'io.confluent:kafka-avro-serializer:3.2.1'
+  testCompile "org.hamcrest:hamcrest-core:1.1"
+
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8

@@ -1,0 +1,58 @@
+buildscript {
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+    maven {
+      url "http://packages.confluent.io/maven/"
+    }
+  }
+}
+
+subprojects {
+  apply plugin: 'maven'
+  apply plugin: 'java'
+  apply plugin: 'idea'
+
+  ext {
+    versionAvro = "1.8.2"
+    versionConfluent="5.0.0"
+    versionKafka = "2.0.0"
+    versionKafkaClients = '1.1.1'
+    versionSpringBoot = '2.0.3.RELEASE'
+    versionGuava = '27.1-jre'
+    versionMockNeat = '0.3.0'
+  }
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+
+    maven {
+      url "http://packages.confluent.io/maven/"
+    }
+  }
+
+  dependencies {
+    compile "com.google.guava:guava:$versionGuava"
+    compile group: 'org.apache.kafka', name: 'kafka-clients', version: "$versionKafkaClients"
+    compile "io.confluent:kafka-connect-avro-converter:$versionConfluent"
+    compile "io.confluent:kafka-schema-registry:$versionConfluent"
+    compile "org.apache.avro:avro:$versionAvro"
+    compile group: 'kafka-avro-confluent', name: 'kafka-avro-confluent', version: '0.1.0'
+    compile 'io.confluent:kafka-avro-serializer:3.2.1'
+    compile "net.andreinc.mockneat:mockneat:$versionMockNeat"
+    testCompile "org.hamcrest:hamcrest-core:1.1"
+  }
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
+
+}
+
+configurations.all {
+   // exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+//    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+//    exclude group: 'org.springframework.boot', module: 'logback-classic'
+}
+
