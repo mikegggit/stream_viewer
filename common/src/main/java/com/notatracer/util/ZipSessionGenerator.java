@@ -8,12 +8,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
 public class ZipSessionGenerator {
-
-
     private void generate(String outPath) {
         TradeMessage tradeMessage = new TradeMessage();
 
@@ -22,16 +22,17 @@ public class ZipSessionGenerator {
 
         tradeMessage.clear();
 
-        File out = new File(outPath);
+        File f = new File(outPath);
         boolean append = false;
-//        FileOutputStream fos = new FileOutputStream(out);
-        
-        try (FileChannel channel = new FileOutputStream(out, append).getChannel()) {
-//            GZIPOutputStream zos = new GZIPOutputStream(fos);
-            MessageUtil.nTradeMessages(1000)
+
+        AtomicInteger counter = new AtomicInteger(1);
+        try (GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(f, append))) {
+            WritableByteChannel out = Channels.newChannel(zos);
+            MessageUtil.nTradeMessages(100)
                     .stream()
                     .forEach(
                             message -> {
+                                System.out.println(counter.getAndIncrement());
                                 tradeMessage.clear();
                                 bb.clear();
                                 header.clear();
@@ -42,8 +43,8 @@ public class ZipSessionGenerator {
                                     header.putInt(slice.remaining());
                                     header.flip();
 
-                                    channel.write(header);
-                                    channel.write(slice);
+                                    out.write(header);
+                                    out.write(slice);
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -60,7 +61,5 @@ public class ZipSessionGenerator {
     public static void main(String[] args) {
         ZipSessionGenerator generator = new ZipSessionGenerator();
         generator.generate("/tmp/session.gz");
-
-
     }
 }

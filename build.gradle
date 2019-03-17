@@ -9,8 +9,27 @@ buildscript {
   }
 }
 
-subprojects {
+
+allprojects {
   apply plugin: 'maven'
+  apply plugin: 'maven-publish'
+  apply plugin: 'java'
+  publishing {
+      publications {
+	  maven(MavenPublication) {
+              from components.java
+        
+              groupId 'com.notatracer.streamviewer'
+              version = '0.0.1'
+	  }
+      }
+  }
+}
+
+subprojects {
+
+
+  // ...need to use "apply plugin" syntax in subprojects
   apply plugin: 'java'
   apply plugin: 'idea'
 

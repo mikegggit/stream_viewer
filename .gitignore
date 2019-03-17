@@ -2,3 +2,5 @@ build
 gradle
 **/*.bak
 gradlew*
+**/out
+**/*.iml

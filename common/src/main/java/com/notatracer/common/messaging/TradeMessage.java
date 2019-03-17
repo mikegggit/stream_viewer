@@ -100,13 +100,13 @@ public class TradeMessage extends Message {
                 .add("id", id)
                 .add("tradeSequenceNumber", tradeSequenceNumber)
                 .add("quantity", quantity)
-                .add("tradePrice", tradePrice)
-                .add("symbol", symbol)
-                .add("strikePrice", strikePrice)
-                .add("expirationDate", expirationDate)
-                .add("callPut", callPut)
-                .add("buyAccount", buyAccount)
-                .add("sellAccount", sellAccount)
+                .add("tradePrice", new String(tradePrice))
+                .add("symbol", new String(symbol))
+                .add("strikePrice", new String(strikePrice))
+                .add("expirationDate", new String(expirationDate))
+                .add("callPut", (char)callPut)
+                .add("buyAccount", new String(buyAccount))
+                .add("sellAccount", new String(sellAccount))œ
                 .toString();
     }
 
