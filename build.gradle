@@ -41,6 +41,8 @@ subprojects {
     versionSpringBoot = '2.0.3.RELEASE'
     versionGuava = '27.1-jre'
     versionMockNeat = '0.3.0'
+    versionJunitJupiter = '5.3.1'
+    versionMockito = '2.1.0'
   }
 
   repositories {
@@ -63,7 +65,15 @@ subprojects {
     compile 'io.confluent:kafka-avro-serializer:3.2.1'
     compile "net.andreinc.mockneat:mockneat:$versionMockNeat"
     testCompile "org.hamcrest:hamcrest-core:1.1"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$versionJunitJupiter"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versionJunitJupiter"
+    testCompile group: 'org.mockito', name: 'mockito-core', version: "$versionMockito"
   }
+
+  test {
+    useJUnitPlatform()
+  }
+
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
 

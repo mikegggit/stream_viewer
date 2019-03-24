@@ -1,6 +1,6 @@
 package com.notatracer.messaging.util;
 
-import com.notatracer.common.messaging.TradeMessage;
+import com.notatracer.common.messaging.trading.TradeMessage;
 import net.andreinc.mockneat.MockNeat;
 import net.andreinc.mockneat.abstraction.MockUnit;
 import net.andreinc.mockneat.abstraction.MockUnitInt;

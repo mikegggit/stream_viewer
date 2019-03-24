@@ -1,4 +1,6 @@
-package com.notatracer.common.messaging;
+package com.notatracer.common.messaging.trading;
+
+import com.notatracer.common.messaging.trading.Listener;
 
 import java.nio.ByteBuffer;
 

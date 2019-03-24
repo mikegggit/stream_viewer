@@ -1,6 +1,7 @@
-package com.notatracer.common.messaging;
+package com.notatracer.common.messaging.trading;
 
 import com.google.common.base.MoreObjects;
+import com.notatracer.common.messaging.Message;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -29,7 +30,7 @@ public class TradeMessage extends Message {
 
     @Override
     public void encode(ByteBuffer buf) {
-        buf.put(this.getMessageType());
+//        buf.put(this.getMessageType());
         buf.putLong(this.id);
         buf.putInt(this.tradeSequenceNumber);
         buf.putInt(this.quantity);
@@ -46,6 +47,7 @@ public class TradeMessage extends Message {
 
         // sellSide
         buf.put(this.sellAccount);
+//        buf.flip();
     }
 
     @Override
@@ -72,6 +74,13 @@ public class TradeMessage extends Message {
     @Override
     public void write() {
 
+    }
+
+    @Override
+    public void parse() {
+        if (this.buf == null)
+            throw new IllegalStateException(("Buf is null."));
+        this.parse(this.buf);
     }
 
     @Override
@@ -106,7 +115,7 @@ public class TradeMessage extends Message {
                 .add("expirationDate", new String(expirationDate))
                 .add("callPut", (char)callPut)
                 .add("buyAccount", new String(buyAccount))
-                .add("sellAccount", new String(sellAccount))œ
+                .add("sellAccount", new String(sellAccount))
                 .toString();
     }
 

@@ -64,6 +64,11 @@ public abstract class Message {
     public abstract void write();
 
     /**
+     * Parses values out of previously set buf.
+     */
+    public abstract void parse();
+
+    /**
      * Parses values out of buf into Message fields.
      */
     public abstract void parse(ByteBuffer buf);

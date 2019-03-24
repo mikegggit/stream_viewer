@@ -9,11 +9,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
-public class ZipSessionGenerator {
+public class SessionGenerator {
     private void generate(String outPath) {
         TradeMessage tradeMessage = new TradeMessage();
 
@@ -22,12 +23,11 @@ public class ZipSessionGenerator {
 
         tradeMessage.clear();
 
-        File f = new File(outPath);
+        File out = new File(outPath);
         boolean append = false;
 
         AtomicInteger counter = new AtomicInteger(1);
-        try (GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(f, append))) {
-            WritableByteChannel out = Channels.newChannel(zos);
+        try (FileChannel channel = new FileOutputStream(out, append).getChannel()) {
             MessageUtil.nTradeMessages(100)
                     .stream()
                     .forEach(
@@ -45,8 +45,8 @@ public class ZipSessionGenerator {
                                     header.putInt(slice.remaining());
                                     header.flip();
 
-                                    out.write(header);
-                                    out.write(slice);
+                                    channel.write(header);
+                                    channel.write(slice);
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -61,7 +61,7 @@ public class ZipSessionGenerator {
     }
 
     public static void main(String[] args) {
-        ZipSessionGenerator generator = new ZipSessionGenerator();
-        generator.generate("/tmp/session.gz");
+        SessionGenerator generator = new SessionGenerator();
+        generator.generate("/tmp/session.out");
     }
 }
