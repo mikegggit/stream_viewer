@@ -1,6 +1,5 @@
 package com.notatracer.streamviewer;
 
-import com.notatracer.common.messaging.trading.DefaultMessageParser;
 import com.notatracer.common.messaging.trading.MessageParser;
 import com.notatracer.common.messaging.trading.TradeMessage;
 import com.notatracer.streamviewer.config.IngestConfig;
@@ -27,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.notatracer.streamviewer", "com.notatracer.common.messaging"})
 @EnableConfigurationProperties(IngestConfig.class)
 public class StreamIngestApp implements CommandLineRunner {
 
@@ -38,6 +37,9 @@ public class StreamIngestApp implements CommandLineRunner {
 
     @Autowired
     private KafkaPublishingListener listener;
+
+    @Autowired
+    private MessageParser parser;
 
     public static void main(String[] args) {
         LOGGER.trace("StreamIngestApp::main");
@@ -64,7 +66,7 @@ public class StreamIngestApp implements CommandLineRunner {
         try (GZIPInputStream zis = new GZIPInputStream(new FileInputStream(new File(path)))) {
             try (ReadableByteChannel in = Channels.newChannel(zis)) {
 
-                MessageParser parser = new DefaultMessageParser();
+//                MessageParser parser = new DefaultMessageParser();
 //                Listener l = new DefaultListener();
 
                 int bytesRead;
@@ -167,25 +169,4 @@ public class StreamIngestApp implements CommandLineRunner {
     public void run(String... args) throws Exception {
         this.run();
     }
-
-//    private KafkaProducer<String,byte[]> createKafkaProducer() {
-//
-//        Properties props = new Properties();
-//        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, ingestConfig.getBootstrapServers());
-//        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringSerializer.class);
-////        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-////                io.confluent.kafka.serializers.KafkaAvroSerializer.class);
-//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-//                org.apache.kafka.common.serialization.ByteArraySerializer.class);
-////        props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG,
-////                TimePartitioner.class.getCanonicalName())
-////        props.put("schema.registry.url", properties.getSchemaRegistryUrl());
-//        props.put("acks", "all");
-//        props.put("retries", 0);
-//        props.put("batch.size", 16384);
-//        props.put("linger.ms", 1);
-//        props.put("buffer.memory", 33554432);
-//
-//        return new KafkaProducer<String, byte[]>(props);
-//    }
 }

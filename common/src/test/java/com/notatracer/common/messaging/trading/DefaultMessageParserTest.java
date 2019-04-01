@@ -19,6 +19,7 @@ public class DefaultMessageParserTest {
         ByteBuffer buf = ByteBuffer.wrap(ba);
         buf.put(trade.getMessageType());
         trade.encode(buf);
+        buf.flip();
 
         parser.parse(buf, l);
         Mockito.verify(l).onTradeMessage(Mockito.any(TradeMessage.class));

@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Date;
 
 public class TradeMessageTest {
@@ -31,6 +35,27 @@ public class TradeMessageTest {
         trade.parse(buf);
         Assertions.assertEquals(1l, trade.id);
 
+    }
+
+    @Test
+    void testEpoch() {
+
+        LocalDateTime now = LocalDateTime.now();
+        System.out.println(now.toEpochSecond(ZoneOffset.UTC));
+
+        LocalDate today = LocalDate.now();
+
+        now = LocalDateTime.of(today, LocalTime.MIDNIGHT);
+
+        System.out.println(now.toEpochSecond(ZoneOffset.UTC));
+
+        long epochNanosAtStartOfSession = now.withHour(9).withMinute(30).toEpochSecond(ZoneOffset.UTC);
+
+        System.out.println(epochNanosAtStartOfSession);
+
+
+
+//        System.out.println(LocalDate.now().
     }
 
 }

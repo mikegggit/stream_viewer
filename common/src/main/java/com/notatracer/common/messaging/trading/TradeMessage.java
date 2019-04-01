@@ -7,11 +7,13 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class TradeMessage extends Message {
+
     public TradeMessage() {
         this.messageType = 'T';
     }
 
     public long id = EMPTY_NUM;
+    private long epochNanos = EMPTY_NUM;
     public int tradeSequenceNumber = EMPTY_NUM;
     public int quantity = EMPTY_NUM;
     public byte[] tradePrice = new byte[Lengths.PRICE.getSize()];
@@ -32,6 +34,7 @@ public class TradeMessage extends Message {
     public void encode(ByteBuffer buf) {
 //        buf.put(this.getMessageType());
         buf.putLong(this.id);
+        buf.putLong(this.epochNanos);
         buf.putInt(this.tradeSequenceNumber);
         buf.putInt(this.quantity);
         buf.put(this.tradePrice);
@@ -53,6 +56,7 @@ public class TradeMessage extends Message {
     @Override
     public void clear() {
         this.id = EMPTY_NUM;
+        this.epochNanos = EMPTY_NUM;
         this.tradeSequenceNumber = EMPTY_NUM;
         this.quantity = EMPTY_NUM;
         Arrays.fill(this.tradePrice, SPACE);
@@ -86,6 +90,7 @@ public class TradeMessage extends Message {
     @Override
     public void parse(ByteBuffer buf) {
         this.id = buf.getLong();
+        this.epochNanos = buf.getLong();
         this.tradeSequenceNumber = buf.getInt();
         this.quantity = buf.getInt();
         buf.get(this.tradePrice);
@@ -107,6 +112,7 @@ public class TradeMessage extends Message {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", id)
+                .add("epochNanos", epochNanos)
                 .add("tradeSequenceNumber", tradeSequenceNumber)
                 .add("quantity", quantity)
                 .add("tradePrice", new String(tradePrice))
@@ -126,6 +132,14 @@ public class TradeMessage extends Message {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public long getEpochNanos() {
+        return epochNanos;
+    }
+
+    public void setEpochNanos(long epochNanos) {
+        this.epochNanos = epochNanos;
     }
 
     public int getTradeSequenceNumber() {

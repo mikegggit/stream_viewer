@@ -16,7 +16,7 @@ public class IngestConfig {
     private static final String REQUEST_TIMEOUT_MS_CONFIG = "1000";
 
     private String bootstrapServers = "localhost:9092";
-    private String requestTimeoutMsConfig = "1000";
+    private String requestTimeoutMsConfig = "3000";
     private String schemaRegistryUrl = "http://localhost:8081";
 
 

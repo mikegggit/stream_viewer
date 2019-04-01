@@ -28,7 +28,7 @@ public class ZipSessionGenerator {
         AtomicInteger counter = new AtomicInteger(1);
         try (GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(f, append))) {
             WritableByteChannel out = Channels.newChannel(zos);
-            MessageUtil.nTradeMessages(100)
+            MessageUtil.nTradeMessages(20000)
                     .stream()
                     .forEach(
                             message -> {

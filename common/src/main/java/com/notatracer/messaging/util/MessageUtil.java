@@ -7,7 +7,7 @@ import net.andreinc.mockneat.abstraction.MockUnitInt;
 import net.andreinc.mockneat.unit.seq.IntSeq;
 import net.andreinc.mockneat.unit.seq.LongSeq;
 
-import java.time.LocalDate;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +19,7 @@ public class MessageUtil {
     public static List<String> SYMBOLS = Arrays.asList("AAPL", "BUD", "CAT", "GILD", "IBM", "YHOO");
     static DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MM/dd/YYYY");
     static LocalDate maxDateInTheFuture = LocalDate.of(2025, 12, 31);
+    public static long epochNanoCounter = 0;
 
 
     private static MockUnit<TradeMessage> getTradeGenerator(MockNeat mock) {
@@ -63,15 +64,49 @@ public class MessageUtil {
         MockUnit<TradeMessage> tradeGenerator = getTradeGenerator(mock);
         return IntStream.range(1, n)
                 .mapToObj(x -> tradeGenerator.get())
+                .map(x -> {
+                    x.setEpochNanos(getEpochNanos());
+                    return x;
+                })
                 .collect(
                         Collectors.toList()
                 );
     }
 
+    private static long getEpochNanos() {
+        LocalDate today = LocalDate.now();
+        int NANOS_IN_SECOND = 1_000_000_000;
+
+        ZonedDateTime tradingDateAtSOD = null;
+
+        ZoneId ET = ZoneId.of("America/New_York");
+        tradingDateAtSOD = ZonedDateTime.of(today, LocalTime.parse("09:30:00"), ET);
+        long epochNanos930ET = tradingDateAtSOD.toEpochSecond() * 1000000000;
+
+//        long sosEpochNanos = LocalDateTime.of(today, LocalTime.MIDNIGHT).withHour(9).withMinute(30).toEpochSecond(ZoneOffset.UTC) * NANOS_IN_SECOND;
+
+        return epochNanos930ET + (epochNanoCounter++ * NANOS_IN_SECOND);
+    }
+
     public static void main(String[] args) {
-        MockNeat mock = MockNeat.threadLocal();
-        MessageUtil.nTradeMessages(10).stream().forEach(
-                t -> System.out.println(t)
-        );
+//        MockNeat mock = MockNeat.threadLocal();
+//        MessageUtil.nTradeMessages(10).stream().forEach(
+//                t -> System.out.println(t)
+//        );
+//
+
+        LocalDate today = LocalDate.now();
+        int NANOS_IN_SECOND = 1_000_000_000;
+
+        ZonedDateTime tradingDateAtSOD = null;
+
+        ZoneId ET = ZoneId.of("America/New_York");
+        tradingDateAtSOD = ZonedDateTime.of(today, LocalTime.parse("09:30:00"), ET);
+        long epochNanos930ET = tradingDateAtSOD.toEpochSecond() * 1000000000;
+
+        long sosEpochNanos = LocalDateTime.of(today, LocalTime.MIDNIGHT).withHour(9).withMinute(30).toEpochSecond(ZoneOffset.UTC) * NANOS_IN_SECOND;
+
+        System.out.println(String.format("1=%s, 2=%s", epochNanos930ET, sosEpochNanos));
+
     }
 }
