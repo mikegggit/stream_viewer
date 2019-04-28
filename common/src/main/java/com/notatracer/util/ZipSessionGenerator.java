@@ -32,8 +32,8 @@ public class ZipSessionGenerator {
                     .stream()
                     .forEach(
                             message -> {
-                                System.out.println(counter.getAndIncrement());
-                                System.out.println(message);
+//                                System.out.println(counter.getAndIncrement());
+//                                System.out.println(message);
                                 tradeMessage.clear();
                                 bb.clear();
                                 header.clear();

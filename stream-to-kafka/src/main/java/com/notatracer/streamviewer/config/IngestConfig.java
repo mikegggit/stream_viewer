@@ -22,11 +22,6 @@ public class IngestConfig {
     private String requestTimeoutMsConfig;
     private String schemaRegistryUrl;
 
-
-    public IngestConfig() {
-        LOGGER.info("Here123");
-    }
-
     @Autowired
     private KafkaConfig kafkaConfig;
 

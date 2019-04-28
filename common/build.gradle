@@ -24,3 +24,27 @@ configurations.all {
   exclude group: "org.slf4j", module: "slf4j-log4j12"
   exclude group: "log4j", module: "log4j"
 }
+
+task sessionGeneratorJar(type: Jar) {
+  manifest {
+    attributes 'Main-Class': 'com.notatracer.util.SessionGenerator'
+  }
+  baseName = 'session-generator'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  with jar
+}
+
+task zipSessionGeneratorJar(type: Jar) {
+  manifest {
+    attributes 'Main-Class': 'com.notatracer.util.ZipSessionGenerator'
+  }
+  baseName = 'zip-session-generator'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  with jar
+}
+
+jar{
+  enabled=true
+  //baseName = 'common'
+  //version = '0.1'
+}
