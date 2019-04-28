@@ -128,7 +128,7 @@ public class StreamIngestApp implements CommandLineRunner {
 
         adminClient = KafkaAdminClient.create(config);
 
-        String topicName = ingestConfig.getKafka().getTopic();
+        String topicName = ingestConfig.getKafkaConfig().getTopic();
         try {
 
             // Recreate topic...
@@ -146,7 +146,7 @@ public class StreamIngestApp implements CommandLineRunner {
             // ...then create new one...
             LOGGER.info("recreating topic...");
 //            NewTopic newTopic = createTopicSinglePartitionNoReplication(topicName);
-            NewTopic newTopic = createTopicPartitioned(topicName, ingestConfig.getKafka().getNumPartitions());
+            NewTopic newTopic = createTopicPartitioned(topicName, ingestConfig.getKafkaConfig().getNumPartitions());
 
             CreateTopicsResult createTopicsResult = adminClient.createTopics(Arrays.asList(newTopic), new CreateTopicsOptions().timeoutMs(5000));
             ((KafkaFuture)createTopicsResult.values().get(topicName)).get();

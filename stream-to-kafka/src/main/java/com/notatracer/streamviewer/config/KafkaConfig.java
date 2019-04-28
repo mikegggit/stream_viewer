@@ -1,11 +1,15 @@
 package com.notatracer.streamviewer.config;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotNull;
 
 @Validated
-public class Kafka {
+@Component
+@ConfigurationProperties(prefix="ingest.kafka")
+public class KafkaConfig {
 
     @NotNull
     private int numPartitions;

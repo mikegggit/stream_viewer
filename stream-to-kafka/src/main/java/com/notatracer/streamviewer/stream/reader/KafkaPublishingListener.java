@@ -55,7 +55,7 @@ public class KafkaPublishingListener extends DefaultListener implements Closeabl
         epochNanos930ET = tradingDateAtSOD.toEpochSecond() * 1000000000;
         epochNanos400ET = tradingDateAtEOD.toEpochSecond() * 1000000000;
 
-        numPartitions = ingestConfig.getKafka().getNumPartitions();
+        numPartitions = ingestConfig.getKafkaConfig().getNumPartitions();
 
         partitionRange = (epochNanos400ET - epochNanos930ET) / numPartitions;
 
@@ -81,7 +81,7 @@ public class KafkaPublishingListener extends DefaultListener implements Closeabl
 
         LOGGER.info(String.format("Publishing message to kafka [trade=%s, msgType=%s, epochNanos=%s, partition=%d]", tradeMessage, (char)tradeMessage.getMessageType(), epochNanos, tgtPartition));
 
-        ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(ingestConfig.getKafka().getTopic(), tgtPartition, null, bytes);
+        ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(ingestConfig.getKafkaConfig().getTopic(), tgtPartition, null, bytes);
 
         kafkaProducer.send(producerRecord,  new Callback() {
             public void onCompletion(RecordMetadata metadata, Exception e) {

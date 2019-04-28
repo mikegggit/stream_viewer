@@ -1,33 +1,41 @@
 package com.notatracer.streamviewer.config;
 
-import com.notatracer.streamviewer.stream.reader.KafkaPublishingListener;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 
 @Configuration
-@ConfigurationProperties
+@ConfigurationProperties(prefix = "ingest")
 public class IngestConfig {
     private static final String REQUEST_TIMEOUT_MS_CONFIG = "1000";
 
-    private String bootstrapServers = "localhost:9092";
-    private String requestTimeoutMsConfig = "3000";
-    private String schemaRegistryUrl = "http://localhost:8081";
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestConfig.class);
+
+    private String bootstrapServers;
+    private String requestTimeoutMsConfig;
+    private String schemaRegistryUrl;
 
 
-    private Kafka kafka;
-
-    public Kafka getKafka() {
-        return kafka;
+    public IngestConfig() {
+        LOGGER.info("Here123");
     }
 
-    public void setKafka(Kafka kafka) {
-        this.kafka = kafka;
+    @Autowired
+    private KafkaConfig kafkaConfig;
+
+    public KafkaConfig getKafkaConfig() {
+        return kafkaConfig;
+    }
+
+    public void setKafkaConfig(KafkaConfig kafkaConfig) {
+        this.kafkaConfig = kafkaConfig;
     }
 
     public String getBootstrapServers() {
@@ -60,7 +68,7 @@ public class IngestConfig {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.getBootstrapServers());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringSerializer.class);
 //        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-//                io.confluent.kafka.serializers.KafkaAvroSerializer.class);
+//                io.confluent.kafkaConfig.serializers.KafkaAvroSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                 org.apache.kafka.common.serialization.ByteArraySerializer.class);
 //        props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG,
