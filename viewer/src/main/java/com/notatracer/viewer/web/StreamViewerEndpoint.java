@@ -1,4 +1,4 @@
-package com.notatracer.web.com.notatracer.viewer.web;
+package com.notatracer.viewer.web;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

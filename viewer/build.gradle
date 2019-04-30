@@ -1,4 +1,7 @@
 apply plugin: 'org.springframework.boot'
+//apply plugin: 'maven'
+//apply plugin: 'io.spring.dependency-management'
+
 
 buildscript {
   repositories {
@@ -18,9 +21,6 @@ buildscript {
 dependencies {
   compile("org.springframework.boot:spring-boot-starter-web:$versionSpringBoot")
 }
-//apply plugin: 'org.springframework.boot'
-apply plugin: 'maven'
-apply plugin: 'io.spring.dependency-management'
 
 configurations.all {
   //exclude group: "ch.qos.logback", module: "logback-classic"
@@ -28,8 +28,17 @@ configurations.all {
   exclude group: "log4j", module: "log4j"
 }
 
+bootJar {
+  mainClassName = 'com.notatracer.viewer.StreamViewerApp'
+}
+
 jar{
   enabled=true
   baseName = 'viewer'
+  manifest {
+    attributes(
+            'Main-Class': 'com.notatracer.viewer.StreamViewerApp'
+    )
+  }
   //version = '0.1'
 }
