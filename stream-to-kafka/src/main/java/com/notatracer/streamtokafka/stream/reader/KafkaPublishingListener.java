@@ -1,8 +1,8 @@
-package com.notatracer.streamviewer.stream.reader;
+package com.notatracer.streamtokafka.stream.reader;
 
 import com.notatracer.common.messaging.trading.DefaultListener;
 import com.notatracer.common.messaging.trading.TradeMessage;
-import com.notatracer.streamviewer.config.IngestConfig;
+import com.notatracer.streamtokafka.config.IngestConfig;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;

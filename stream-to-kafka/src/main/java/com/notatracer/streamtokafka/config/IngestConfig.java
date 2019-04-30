@@ -1,4 +1,4 @@
-package com.notatracer.streamviewer.config;
+package com.notatracer.streamtokafka.config;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;

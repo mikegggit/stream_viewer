@@ -1,9 +1,9 @@
-package com.notatracer.streamviewer;
+package com.notatracer.streamtokafka;
 
 import com.notatracer.common.messaging.trading.MessageParser;
 import com.notatracer.common.messaging.trading.TradeMessage;
-import com.notatracer.streamviewer.config.IngestConfig;
-import com.notatracer.streamviewer.stream.reader.KafkaPublishingListener;
+import com.notatracer.streamtokafka.config.IngestConfig;
+import com.notatracer.streamtokafka.stream.reader.KafkaPublishingListener;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.KafkaFuture;
 import org.slf4j.Logger;
