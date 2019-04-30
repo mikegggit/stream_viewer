@@ -1,7 +1,9 @@
 package com.notatracer.viewer;
 
+import com.notatracer.viewer.config.KafkaConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -18,6 +20,9 @@ public class StreamViewerApp implements ApplicationRunner {
      * first message to read in format HH:mm:dd
      */
     private static final String ARG_START_TIME = "start-time";
+
+    @Autowired
+    private KafkaConfig kafkaConfig;
 
     public static void main(String[] args) {
         LOGGER.trace("StreamViewerApp::main");
@@ -42,9 +47,15 @@ public class StreamViewerApp implements ApplicationRunner {
 
         LOGGER.info("Processed arguments [start-time={}]", startFromBeginning ? "beginning" : argStartTime);
 
+        stream(argStartTime);
 //        String startTimeString = ;
 //        LocalTime.parse(startTimeString);
 
+    }
+
+    private void stream(String argStartTime) {
+
+        LOGGER.info("streaming session [argStartTime={}, topic={}]", argStartTime, kafkaConfig.getTopic());
     }
 //
 //    public void process(String topic, int partition, String startTimeString) {
