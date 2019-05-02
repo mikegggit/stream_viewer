@@ -9,9 +9,14 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import javax.annotation.PostConstruct;
 import java.time.*;
 import java.util.*;
 
+/**
+ * Simple topic viewer application capable of starting at user-supplied
+ * start time.
+ */
 @SpringBootApplication
 public class StreamViewerApp implements ApplicationRunner {
 
@@ -21,12 +26,42 @@ public class StreamViewerApp implements ApplicationRunner {
      */
     private static final String ARG_START_TIME = "start-time";
 
+
+    private ZonedDateTime tradingDateAtSOD = null;
+
+    private ZonedDateTime tradingDateAtEOD = null;
+
+    private long epochNanos930ET = -1l;
+    private long epochNanos400ET = -1l;
+
+    int numPartitions = -1;
+
+    long partitionRange = -1l;
+
+
     @Autowired
     private KafkaConfig kafkaConfig;
 
     public static void main(String[] args) {
         LOGGER.trace("StreamViewerApp::main");
         SpringApplication.run(StreamViewerApp.class, args);
+    }
+
+    @PostConstruct
+    public void init() {
+        LocalDate tradeDate = LocalDate.now();
+        ZoneId ET = ZoneId.of("America/New_York");
+        tradingDateAtSOD = ZonedDateTime.of(tradeDate, LocalTime.parse("09:30:00"), ET);
+        tradingDateAtEOD = ZonedDateTime.of(tradeDate, LocalTime.parse("16:00:00"), ET);
+
+        epochNanos930ET = tradingDateAtSOD.toEpochSecond() * 1000000000;
+        epochNanos400ET = tradingDateAtEOD.toEpochSecond() * 1000000000;
+
+        numPartitions = ingestConfig.getKafkaConfig().getNumPartitions();
+
+        partitionRange = (epochNanos400ET - epochNanos930ET) / numPartitions;
+
+        LOGGER.info(String.format("Initializing listener [epochNanos930ET=%s, epochNanos400ET=%s, numPartitions=%s, partitionRange=%s]", epochNanos930ET, epochNanos400ET, numPartitions, partitionRange));
     }
 
     @Override
@@ -54,8 +89,32 @@ public class StreamViewerApp implements ApplicationRunner {
     }
 
     private void stream(String argStartTime) {
-
         LOGGER.info("streaming session [argStartTime={}, topic={}]", argStartTime, kafkaConfig.getTopic());
+
+        // get epochNanos
+        LocalDateTime localDateTime = LocalTime.parse(argStartTime).atDate(LocalDate.parse("2019-05-01"));
+//        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("America/New_York"));
+//        long startTimeInEpochNanos = zonedDateTime.toEpochSecond() * 1000000000;
+//
+
+
+
+    }
+
+    private int calculatePartition(long epochNanos) {
+        // calculate partition...
+        long sodNanos = epochNanos - epochNanos930ET;
+        int partitionNum = -1;
+
+        if (sodNanos < partitionRange) {
+            partitionNum = 0;
+        } else if (sodNanos > (epochNanos400ET - epochNanos930ET - partitionRange)) {
+            // Assign to last partition
+            partitionNum = numPartitions - 1;
+        } else {
+            partitionNum = (int)(sodNanos / partitionRange);
+        }
+        return partitionNum;
     }
 //
 //    public void process(String topic, int partition, String startTimeString) {

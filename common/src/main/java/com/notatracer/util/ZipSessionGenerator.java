@@ -2,6 +2,8 @@ package com.notatracer.util;
 
 import com.notatracer.common.messaging.trading.TradeMessage;
 import com.notatracer.messaging.util.MessageUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,10 +12,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
 public class ZipSessionGenerator {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(ZipSessionGenerator.class.getName());
+
     private void generate(String outPath) {
         TradeMessage tradeMessage = new TradeMessage();
 
@@ -62,6 +69,14 @@ public class ZipSessionGenerator {
 
     public static void main(String[] args) {
         ZipSessionGenerator generator = new ZipSessionGenerator();
-        generator.generate("/tmp/session.gz");
+
+        final LocalDate now = LocalDate.now();
+        String nowString = now.format(DateTimeFormatter.ofPattern("MM-dd-yyyy"));
+        String filename = "session-" + nowString + ".gz";
+        String path = "/tmp" + "/" + filename;
+
+        LOGGER.info("Creating session file [path={}]", path);
+        LOGGER.info("here");
+        generator.generate(path);
     }
 }
