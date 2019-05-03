@@ -14,11 +14,22 @@ public class KafkaConfig {
     @NotNull
     private String topic;
 
+    @NotNull
+    private int numPartitions;
+
     public String getTopic() {
         return topic;
     }
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    public int getNumPartitions() {
+        return numPartitions;
+    }
+
+    public void setNumPartitions(int numPartitions) {
+        this.numPartitions = numPartitions;
     }
 }

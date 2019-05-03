@@ -5,7 +5,7 @@ ingest:
   bootstrapServers: localhost:9092
   requestTimeoutMsConfig: 12345
   schemaRegistryUrl: http://localhost:8081
-
+  sessionPath: /tmp/session-05-01-2019.gz
   kafka:
     numPartitions: 20
-    topic: MikeG
+    topic: session-05-01-2019

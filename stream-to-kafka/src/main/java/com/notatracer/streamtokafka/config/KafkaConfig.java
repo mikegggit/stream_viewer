@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 
 @Validated
 @Component
-@ConfigurationProperties(prefix="ingest.kafka")
+@ConfigurationProperties(prefix="kafka")
 public class KafkaConfig {
 
     @NotNull

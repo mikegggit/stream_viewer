@@ -21,6 +21,8 @@ public class IngestConfig {
     private String bootstrapServers;
     private String requestTimeoutMsConfig;
     private String schemaRegistryUrl;
+    private String sessionPath;
+
 
     @Autowired
     private KafkaConfig kafkaConfig;

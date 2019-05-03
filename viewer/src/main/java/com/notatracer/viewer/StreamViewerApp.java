@@ -26,6 +26,8 @@ public class StreamViewerApp implements ApplicationRunner {
      */
     private static final String ARG_START_TIME = "start-time";
 
+    private static final String TIME_OPENING = "09:30:00";
+    private static final String TIME_CLOSING = "16:00:00";
 
     private ZonedDateTime tradingDateAtSOD = null;
 
@@ -49,19 +51,19 @@ public class StreamViewerApp implements ApplicationRunner {
 
     @PostConstruct
     public void init() {
-        LocalDate tradeDate = LocalDate.now();
+        LocalDate tradeDate = LocalDate.of(2019, 5, 1);
         ZoneId ET = ZoneId.of("America/New_York");
-        tradingDateAtSOD = ZonedDateTime.of(tradeDate, LocalTime.parse("09:30:00"), ET);
-        tradingDateAtEOD = ZonedDateTime.of(tradeDate, LocalTime.parse("16:00:00"), ET);
+        tradingDateAtSOD = ZonedDateTime.of(tradeDate, LocalTime.parse(TIME_OPENING), ET);
+        tradingDateAtEOD = ZonedDateTime.of(tradeDate, LocalTime.parse(TIME_CLOSING), ET);
 
         epochNanos930ET = tradingDateAtSOD.toEpochSecond() * 1000000000;
         epochNanos400ET = tradingDateAtEOD.toEpochSecond() * 1000000000;
 
-        numPartitions = ingestConfig.getKafkaConfig().getNumPartitions();
+        numPartitions = kafkaConfig.getNumPartitions();
 
         partitionRange = (epochNanos400ET - epochNanos930ET) / numPartitions;
 
-        LOGGER.info(String.format("Initializing listener [epochNanos930ET=%s, epochNanos400ET=%s, numPartitions=%s, partitionRange=%s]", epochNanos930ET, epochNanos400ET, numPartitions, partitionRange));
+        LOGGER.info("Initializing listener [epochNanos930ET={}, epochNanos400ET={}, numPartitions={}, partitionRange={}]", epochNanos930ET, epochNanos400ET, numPartitions, partitionRange);
     }
 
     @Override
@@ -83,26 +85,24 @@ public class StreamViewerApp implements ApplicationRunner {
         LOGGER.info("Processed arguments [start-time={}]", startFromBeginning ? "beginning" : argStartTime);
 
         stream(argStartTime);
-//        String startTimeString = ;
-//        LocalTime.parse(startTimeString);
 
     }
 
     private void stream(String argStartTime) {
-        LOGGER.info("streaming session [argStartTime={}, topic={}]", argStartTime, kafkaConfig.getTopic());
 
-        // get epochNanos
-        LocalDateTime localDateTime = LocalTime.parse(argStartTime).atDate(LocalDate.parse("2019-05-01"));
-//        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("America/New_York"));
-//        long startTimeInEpochNanos = zonedDateTime.toEpochSecond() * 1000000000;
-//
+        LocalTime startTime = LocalTime.parse(Optional.ofNullable(argStartTime).orElse(TIME_OPENING));
+        LocalDateTime localDateTime = startTime.atDate(LocalDate.parse("2019-05-01"));
+        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("America/New_York"));
+        long startTimeInEpochNanos = zonedDateTime.toEpochSecond() * 1000000000;
 
+        int partitionNum = calculatePartition(startTimeInEpochNanos);
 
-
+        LOGGER.info("Streaming session [startTime={}, topic={}, initial-partition={}]", localDateTime, kafkaConfig.getTopic(), partitionNum);
     }
 
     private int calculatePartition(long epochNanos) {
         // calculate partition...
+        LOGGER.info("calculatePartition [epochNanos={}]", epochNanos);
         long sodNanos = epochNanos - epochNanos930ET;
         int partitionNum = -1;
 

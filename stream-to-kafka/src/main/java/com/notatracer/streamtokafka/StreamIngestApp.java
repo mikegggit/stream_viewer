@@ -53,7 +53,7 @@ public class StreamIngestApp implements CommandLineRunner {
 
 //        KafkaProducer<String, byte[]> kafkaProducer = createKafkaProducer();
 
-        String path = "/tmp/session.gz";
+        String path = ingestConfig.getSessionPath();;
         TradeMessage tradeMessage = new TradeMessage();
 
         ByteBuffer header = ByteBuffer.allocate(4);
