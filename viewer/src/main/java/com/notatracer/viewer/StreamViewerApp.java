@@ -13,6 +13,8 @@ import javax.annotation.PostConstruct;
 import java.time.*;
 import java.util.*;
 
+import static com.notatracer.kafka.util.KafkaUtil.topicPartitionExists;
+
 /**
  * Simple topic viewer application capable of starting at user-supplied
  * start time.
@@ -98,6 +100,57 @@ public class StreamViewerApp implements ApplicationRunner {
         int partitionNum = calculatePartition(startTimeInEpochNanos);
 
         LOGGER.info("Streaming session [startTime={}, topic={}, initial-partition={}]", localDateTime, kafkaConfig.getTopic(), partitionNum);
+
+        streamStartingAt(partitionNum, argStartTime);
+    }
+
+    private void streamStartingAt(int partitionNum, String argStartTime) {
+
+        String topic = kafkaConfig.getTopic();
+        assertTopicPartitionExists(topic, partitionNum, kafkaConfig);
+
+        LOGGER.info(String.format("process [topic=%s, partition=%d]", topic, partitionNum));
+
+
+
+//
+//        // Calculate start time in epoch nanos
+//        LocalDateTime localDateTime = LocalTime.parse(startTimeString).atDate(LocalDate.parse("2018-10-04"));
+//        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("America/New_York"));
+//        long startTimeInEpochNanos = zonedDateTime.toEpochSecond() * 1000000000;
+//
+//        LOGGER.info(String.format("Searching for start [startTimeInEpochNanos=%d]", startTimeInEpochNanos));
+//
+//        // Get last offset in topic...
+//        // First, create consumer for the binary search
+//        KafkaConsumer<String, byte[]> consumer = null;
+//        long startOffset;
+//        TopicPartition topicPartition = new TopicPartition(topic, partition);
+//
+//        try {
+//            consumer = getSearchConsumer();
+//            consumer.assign(Arrays.asList(topicPartition));
+//
+//            // ensure partition contains startTime...
+//            ensurePartitionForStartTime(startTimeInEpochNanos, consumer, topicPartition);
+//
+//            // use binary search to get determine offset to start polling from...
+//            Map<TopicPartition, Long> offsetMap = consumer.endOffsets(Arrays.asList(topicPartition));
+//            long maxOffset = offsetMap.get(topicPartition);
+//            startOffset = getInitialOffset(consumer, topicPartition, 0l, maxOffset, startTimeInEpochNanos);
+//
+//            LOGGER.info(String.format("Found offset [value=%d]", startOffset));
+//        } finally {
+//            consumer.close();
+//        }
+//
+    }
+
+    private void assertTopicPartitionExists(String topic, int partitionNum, KafkaConfig kafkaConfig) {
+        if (!topicPartitionExists(topic, partitionNum, kafkaConfig)) {
+            LOGGER.error("Failed to find topic partition.");
+            throw new IllegalArgumentException(String.format("Topic does not exist [name=%s]", topic));
+        }
     }
 
     private int calculatePartition(long epochNanos) {
@@ -112,7 +165,7 @@ public class StreamViewerApp implements ApplicationRunner {
             // Assign to last partition
             partitionNum = numPartitions - 1;
         } else {
-            partitionNum = (int)(sodNanos / partitionRange);
+            partitionNum = (int) (sodNanos / partitionRange);
         }
         return partitionNum;
     }

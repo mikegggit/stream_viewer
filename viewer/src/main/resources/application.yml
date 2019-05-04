@@ -1,2 +1,5 @@
-topic: session-05-01-2019
-numPartitions: 20
+kafka:
+  bootstrapServers: localhost:9092
+  requestTimeoutMsConfig: 10000
+  topic: session-05-01-2019
+  numPartitions: 20
