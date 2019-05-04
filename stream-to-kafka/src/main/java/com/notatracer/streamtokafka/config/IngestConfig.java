@@ -23,7 +23,6 @@ public class IngestConfig {
     private String schemaRegistryUrl;
     private String sessionPath;
 
-
     @Autowired
     private KafkaConfig kafkaConfig;
 
@@ -79,7 +78,16 @@ public class IngestConfig {
 
         return new KafkaProducer<String, byte[]>(props);
     }
-//
+
+    public String getSessionPath() {
+        return sessionPath;
+    }
+
+    public void setSessionPath(String sessionPath) {
+        this.sessionPath = sessionPath;
+    }
+
+    //
 //    @Bean
 //    public KafkaPublishingListener kafkaPublishingListener(KafkaProducer<String, byte[]> kafkaProducer) {
 //        return new KafkaPublishingListener();

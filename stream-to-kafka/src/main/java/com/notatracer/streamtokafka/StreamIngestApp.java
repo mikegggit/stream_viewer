@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
-@SpringBootApplication(scanBasePackages = {"com.notatracer.streamviewer", "com.notatracer.common.messaging"})
+@SpringBootApplication(scanBasePackages = {"com.notatracer.streamviewer", "com.notatracer.common.messaging", "com.notatracer.streamtokafka"})
 @EnableConfigurationProperties(IngestConfig.class)
 public class StreamIngestApp implements CommandLineRunner {
 
@@ -53,7 +53,7 @@ public class StreamIngestApp implements CommandLineRunner {
 
 //        KafkaProducer<String, byte[]> kafkaProducer = createKafkaProducer();
 
-        String path = ingestConfig.getSessionPath();;
+        String path = ingestConfig.getSessionPath();
         TradeMessage tradeMessage = new TradeMessage();
 
         ByteBuffer header = ByteBuffer.allocate(4);
