@@ -12,8 +12,6 @@ public class TradeMessage extends Message {
         this.messageType = 'T';
     }
 
-    public long id = EMPTY_NUM;
-    private long epochNanos = EMPTY_NUM;
     public int tradeSequenceNumber = EMPTY_NUM;
     public int quantity = EMPTY_NUM;
     public byte[] tradePrice = new byte[Lengths.PRICE.getSize()];
@@ -52,6 +50,8 @@ public class TradeMessage extends Message {
         buf.put(this.sellAccount);
 //        buf.flip();
     }
+
+
 
     @Override
     public void clear() {

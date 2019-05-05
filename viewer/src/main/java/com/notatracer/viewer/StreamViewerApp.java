@@ -1,6 +1,13 @@
 package com.notatracer.viewer;
 
+import com.notatracer.common.messaging.Message;
+import com.notatracer.common.messaging.trading.TradeMessage;
 import com.notatracer.viewer.config.KafkaConfig;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +17,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import javax.annotation.PostConstruct;
+import java.nio.ByteBuffer;
 import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static com.notatracer.kafka.util.KafkaUtil.topicPartitionExists;
@@ -41,6 +50,8 @@ public class StreamViewerApp implements ApplicationRunner {
     int numPartitions = -1;
 
     long partitionRange = -1l;
+
+    Message message = new TradeMessage();
 
 
     @Autowired
@@ -101,49 +112,101 @@ public class StreamViewerApp implements ApplicationRunner {
 
         LOGGER.info("Streaming session [startTime={}, topic={}, initial-partition={}]", localDateTime, kafkaConfig.getTopic(), partitionNum);
 
-        streamStartingAt(partitionNum, argStartTime);
+        streamStartingAt(partitionNum, startTimeInEpochNanos);
     }
 
-    private void streamStartingAt(int partitionNum, String argStartTime) {
+    private void streamStartingAt(int partitionNum, long startTimeInEpochNanos) {
 
         String topic = kafkaConfig.getTopic();
         assertTopicPartitionExists(topic, partitionNum, kafkaConfig);
 
-        LOGGER.info(String.format("process [topic=%s, partition=%d]", topic, partitionNum));
+        KafkaConsumer<String, byte[]> consumer = null;
+        long startOffset;
+        TopicPartition topicPartition = new TopicPartition(topic, partitionNum);
 
+        try {
+            consumer = getSingleRecordPollingConsumer();
+            consumer.assign(Arrays.asList(topicPartition));
 
+            // ensure partition contains startTime...
+            assertTopicPartitionContainsStartTime(startTimeInEpochNanos, consumer, topicPartition);
 
-//
-//        // Calculate start time in epoch nanos
-//        LocalDateTime localDateTime = LocalTime.parse(startTimeString).atDate(LocalDate.parse("2018-10-04"));
-//        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("America/New_York"));
-//        long startTimeInEpochNanos = zonedDateTime.toEpochSecond() * 1000000000;
-//
-//        LOGGER.info(String.format("Searching for start [startTimeInEpochNanos=%d]", startTimeInEpochNanos));
-//
-//        // Get last offset in topic...
-//        // First, create consumer for the binary search
-//        KafkaConsumer<String, byte[]> consumer = null;
-//        long startOffset;
-//        TopicPartition topicPartition = new TopicPartition(topic, partition);
-//
-//        try {
-//            consumer = getSearchConsumer();
-//            consumer.assign(Arrays.asList(topicPartition));
-//
-//            // ensure partition contains startTime...
-//            ensurePartitionForStartTime(startTimeInEpochNanos, consumer, topicPartition);
-//
-//            // use binary search to get determine offset to start polling from...
-//            Map<TopicPartition, Long> offsetMap = consumer.endOffsets(Arrays.asList(topicPartition));
-//            long maxOffset = offsetMap.get(topicPartition);
-//            startOffset = getInitialOffset(consumer, topicPartition, 0l, maxOffset, startTimeInEpochNanos);
-//
-//            LOGGER.info(String.format("Found offset [value=%d]", startOffset));
-//        } finally {
-//            consumer.close();
-//        }
-//
+            LOGGER.info(String.format("Searching for start offset [startTimeInEpochNanos=%d, partitionNum=%d]", startTimeInEpochNanos, partitionNum));
+
+            // use binary search to get determine offset to start polling from...
+            Map<TopicPartition, Long> offsetMap = consumer.endOffsets(Arrays.asList(topicPartition));
+            long maxOffsetInPartition = offsetMap.get(topicPartition);
+            startOffset = getInitialOffset(consumer, topicPartition, 0l, maxOffsetInPartition, startTimeInEpochNanos);
+
+            LOGGER.info(String.format("Found offset [value=%d]", startOffset));
+        } finally {
+            consumer.close();
+        }
+
+    }
+
+    private void assertTopicPartitionContainsStartTime(long startTimeInEpochNanos, KafkaConsumer<String, byte[]> consumer, TopicPartition topicPartition) {
+        LOGGER.debug(String.format("assertTopicPartitionContainsStartTime [startTimeInEpochNanos=%d]", startTimeInEpochNanos));
+
+        consumer.seek(topicPartition, 0);
+        ConsumerRecords<String, byte[]> record = consumer.poll(Duration.of(100, ChronoUnit.MILLIS));
+
+        assertOneRecord(record);
+
+        ByteBuffer buf = ByteBuffer.allocate(1000);
+
+        byte[] recordBytes = record.records(topicPartition).get(0).value();
+        buf.put(recordBytes);
+        buf.flip();
+
+        long earliestInPartition = Message.parseEpochNanos(buf);
+        System.out.println("earliest: " + earliestInPartition);
+        System.out.println("msgType: " + Message.parseMsgType(buf));
+
+        consumer.seekToEnd(Arrays.asList(topicPartition));
+        System.out.println("position: " + consumer.position(topicPartition));
+        consumer.seek(topicPartition, consumer.position(topicPartition) - 1);
+        record = consumer.poll(Duration.of(100, ChronoUnit.MILLIS));
+
+        assertOneRecord(record);
+
+        recordBytes = record.records(topicPartition).get(0).value();
+        buf.clear();
+        buf.put(recordBytes);
+        buf.flip();
+
+        long latestInPartition = Message.parseEpochNanos(buf);
+        if (! (startTimeInEpochNanos >= earliestInPartition && startTimeInEpochNanos <= latestInPartition) ) {
+            LOGGER.error(String.format("Starting time is outside the range of this partition [startTimeInEpochNanos=%d, earliest=%d, latest=%d]", startTimeInEpochNanos, earliestInPartition, latestInPartition));
+            throw new RuntimeException(String.format("Starting time is outside the range of this partition [startTimeInEpochNanos=%d, earliest=%d, latest=%d]", startTimeInEpochNanos, earliestInPartition, latestInPartition));
+        }
+    }
+
+    private void assertOneRecord(ConsumerRecords<String, byte[]> record) {
+        if (record == null || record.count() == 0) {
+            LOGGER.error("No records found!");
+            throw new RuntimeException("No records found!");
+        }
+
+        if (record.count() != 1) {
+            LOGGER.error(String.format("Expected 1 record, found %d", record.count()));
+            throw new RuntimeException(String.format("Expected 1 record, found %d", record.count()));
+        }
+    }
+
+    private KafkaConsumer<String,byte[]> getSingleRecordPollingConsumer() {
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBootstrapServers());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG,
+                "SquirrelSessionConsumer");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                ByteArrayDeserializer.class);
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
+        props.put("enable.auto.commit", "true");
+        props.put("auto.commit.interval.ms", "1000");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        return new KafkaConsumer<>(props);
     }
 
     private void assertTopicPartitionExists(String topic, int partitionNum, KafkaConfig kafkaConfig) {
@@ -154,8 +217,7 @@ public class StreamViewerApp implements ApplicationRunner {
     }
 
     private int calculatePartition(long epochNanos) {
-        // calculate partition...
-        LOGGER.info("calculatePartition [epochNanos={}]", epochNanos);
+        LOGGER.info("calculatePartition [epochNanos={}, epochNanos930ET={}, epochNanos400ET={}]", epochNanos, epochNanos930ET, epochNanos400ET);
         long sodNanos = epochNanos - epochNanos930ET;
         int partitionNum = -1;
 
@@ -193,7 +255,7 @@ public class StreamViewerApp implements ApplicationRunner {
 //        TopicPartition topicPartition = new TopicPartition(topic, partition);
 //
 //        try {
-//            consumer = getSearchConsumer();
+//            consumer = getSingleRecordPollingConsumer();
 //            consumer.assign(Arrays.asList(topicPartition));
 //
 //            // ensure partition contains startTime...
@@ -237,41 +299,41 @@ public class StreamViewerApp implements ApplicationRunner {
 //        return new KafkaConsumer<>(props);
 //    }
 //
-//    private long getInitialOffset(KafkaConsumer consumer, TopicPartition topicPartition, long min, long max, long targetVal) {
-//
-//        LOGGER.info(String.format("getInitialOffset [min=%d, max=%d]", min, max));
-//        long nextOffsetToSearch = (min + max) / 2;
-//
-//        LOGGER.info(String.format("Searching... [nextOffset=%d, maxOffset=%d]", nextOffsetToSearch, max));
-//        consumer.seek(topicPartition, nextOffsetToSearch);
-//        ConsumerRecords<String, byte[]> record = consumer.poll(100);
-//
-//        assertOneRecord(record);
-//
-//        // Get epoch nanos from search record and compare to desired start ts...
-//        ByteArrayBuffer buf = (ByteArrayBuffer) (ByteArrayBuffer.getFactory().createBuffer(10000));
-//        byte[] inetBytes = record.records(topicPartition).get(0).value();
-//        buf.put(inetBytes);
-//        buf.flip();
-//
-//        seqCocoMsg.setBuffer(buf);
-//
-//        long epochNanos = seqCocoMsg.parseTimestamp();
-//        byte msgType = SeqCocoMsg.crackMsgType(buf);
-//
-//        LOGGER.info(String.format("search result [target=%d, found=%d]", targetVal, epochNanos));
-//        if (Math.abs(targetVal - epochNanos) <= 1000000000) {
-//            LOGGER.info(String.format("Found match [value=%d]", epochNanos));
-//            // found starting point
-//            return nextOffsetToSearch;
-//        } else if (targetVal < epochNanos) {
-//            LOGGER.info(String.format("Offset is too high [epochNanos=%d, targetVal=%d]", epochNanos, targetVal));
-//            return getInitialOffset(consumer, topicPartition, min, nextOffsetToSearch, targetVal);
-//        } else {
-//            LOGGER.info(String.format("Offset is too low [epochNanos=%d, targetVal=%d]", epochNanos, targetVal));
-//            return getInitialOffset(consumer, topicPartition, nextOffsetToSearch, max, targetVal);
-//        }
-//    }
+    private long getInitialOffset(KafkaConsumer consumer, TopicPartition topicPartition, long min, long max, long targetVal) {
+
+        LOGGER.info(String.format("getInitialOffset [min=%d, max=%d]", min, max));
+        long nextOffsetToSearch = (min + max) / 2;
+
+        LOGGER.info(String.format("Searching... [nextOffset=%d, maxOffset=%d]", nextOffsetToSearch, max));
+        consumer.seek(topicPartition, nextOffsetToSearch);
+        ConsumerRecords<String, byte[]> record = consumer.poll(100);
+
+        assertOneRecord(record);
+
+        // Get epoch nanos from search record and compare to desired start ts...
+        ByteArrayBuffer buf = (ByteArrayBuffer) (ByteArrayBuffer.getFactory().createBuffer(10000));
+        byte[] inetBytes = record.records(topicPartition).get(0).value();
+        buf.put(inetBytes);
+        buf.flip();
+
+        seqCocoMsg.setBuffer(buf);
+
+        long epochNanos = seqCocoMsg.parseTimestamp();
+        byte msgType = SeqCocoMsg.crackMsgType(buf);
+
+        LOGGER.info(String.format("search result [target=%d, found=%d]", targetVal, epochNanos));
+        if (Math.abs(targetVal - epochNanos) <= 1000000000) {
+            LOGGER.info(String.format("Found match [value=%d]", epochNanos));
+            // found starting point
+            return nextOffsetToSearch;
+        } else if (targetVal < epochNanos) {
+            LOGGER.info(String.format("Offset is too high [epochNanos=%d, targetVal=%d]", epochNanos, targetVal));
+            return getInitialOffset(consumer, topicPartition, min, nextOffsetToSearch, targetVal);
+        } else {
+            LOGGER.info(String.format("Offset is too low [epochNanos=%d, targetVal=%d]", epochNanos, targetVal));
+            return getInitialOffset(consumer, topicPartition, nextOffsetToSearch, max, targetVal);
+        }
+    }
 //
 //    private void ensurePartitionForStartTime(long startTimeInEpochNanos, KafkaConsumer<String, byte[]> consumer, TopicPartition topicPartition) {
 //        LOGGER.info(String.format("ensurePartitionForStartTime [startTimeInEpochNanos=%d]", startTimeInEpochNanos));
@@ -328,7 +390,7 @@ public class StreamViewerApp implements ApplicationRunner {
 //        }
 //    }
 //
-//    private KafkaConsumer<String, byte[]> getSearchConsumer() {
+//    private KafkaConsumer<String, byte[]> getSingleRecordPollingConsumer() {
 //        Properties props = new Properties();
 //        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getBootstrapServers());
 //        props.put(ConsumerConfig.GROUP_ID_CONFIG,

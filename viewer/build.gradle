@@ -19,6 +19,7 @@ buildscript {
 }
 
 dependencies {
+  compile "com.notatracer.streamviewer:common:0.0.1"
   compile("org.springframework.boot:spring-boot-starter-web:$versionSpringBoot")
 }
 

@@ -43,11 +43,9 @@ public class KafkaPublishingListener extends DefaultListener implements Closeabl
 
     long partitionRange = -1l;
 
-//    public KafkaPublishingListener() {}
-
     @PostConstruct
     public void init() {
-        LocalDate tradeDate = LocalDate.now();
+        LocalDate tradeDate = LocalDate.of(2019, 5, 1);
         ZoneId ET = ZoneId.of("America/New_York");
         tradingDateAtSOD = ZonedDateTime.of(tradeDate, LocalTime.parse("09:30:00"), ET);
         tradingDateAtEOD = ZonedDateTime.of(tradeDate, LocalTime.parse("16:00:00"), ET);
@@ -103,6 +101,7 @@ public class KafkaPublishingListener extends DefaultListener implements Closeabl
     private int calculatePartition(long epochNanos) {
         // calculate partition...
         long sodNanos = epochNanos - epochNanos930ET;
+        LOGGER.info("calculatePartition [epochNanos930ET={}, epochNanos={}, sodNanos={}]", epochNanos930ET, epochNanos, sodNanos);
         int partitionNum = -1;
 
         if (sodNanos < partitionRange) {

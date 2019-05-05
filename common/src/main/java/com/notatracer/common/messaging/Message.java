@@ -1,6 +1,7 @@
 package com.notatracer.common.messaging;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
 
 /**
  *
@@ -12,6 +13,8 @@ public abstract class Message {
     public static final byte SPACE = (byte)' ';
 
     protected byte messageType = EMPTY_BYTE;
+    public long id = EMPTY_NUM;
+    public long epochNanos = EMPTY_NUM;
 
     protected ByteBuffer buf;
 
@@ -80,4 +83,25 @@ public abstract class Message {
     public byte getMessageType() {
         return messageType;
     }
+
+    public long parseId() {
+        return Optional.ofNullable(buf).map(b -> b.getLong(1)).orElseThrow(() -> new IllegalStateException("Buffer not set."));
+    }
+
+    public long parseEpochNanos() {
+        return Optional.ofNullable(buf).map(b -> b.getLong(9)).orElseThrow(() -> new IllegalStateException("Buffer not set."));
+    }
+
+    public static char parseMsgType(ByteBuffer buf) {
+        return Optional.of(buf).get().getChar(0);
+    }
+
+    public static long parseId(ByteBuffer buf) {
+        return Optional.of(buf).get().getLong(1);
+    }
+
+    public static long parseEpochNanos(ByteBuffer buf) {
+        return Optional.of(buf).get().getLong(9);
+    }
+
 }
