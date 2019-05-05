@@ -1,5 +1,6 @@
 package com.notatracer.viewer;
 
+import com.notatracer.TimeUtil;
 import com.notatracer.common.messaging.Message;
 import com.notatracer.common.messaging.trading.LoggingMessageListener;
 import com.notatracer.common.messaging.trading.MessageParser;
@@ -43,15 +44,10 @@ public class StreamViewerApp implements ApplicationRunner {
     private static final String TIME_OPENING = "09:30:00";
     private static final String TIME_CLOSING = "16:00:00";
 
-    private ZonedDateTime tradingDateAtSOD = null;
-
-    private ZonedDateTime tradingDateAtEOD = null;
-
     private long epochNanos930ET = -1l;
     private long epochNanos400ET = -1l;
 
     int numPartitions = -1;
-
     long partitionRange = -1l;
 
     Message message = new TradeMessage();
@@ -67,15 +63,14 @@ public class StreamViewerApp implements ApplicationRunner {
         SpringApplication.run(StreamViewerApp.class, args);
     }
 
+
     @PostConstruct
     public void init() {
         LocalDate tradeDate = LocalDate.of(2019, 5, 1);
         ZoneId ET = ZoneId.of("America/New_York");
-        tradingDateAtSOD = ZonedDateTime.of(tradeDate, LocalTime.parse(TIME_OPENING), ET);
-        tradingDateAtEOD = ZonedDateTime.of(tradeDate, LocalTime.parse(TIME_CLOSING), ET);
 
-        epochNanos930ET = tradingDateAtSOD.toEpochSecond() * 1000000000;
-        epochNanos400ET = tradingDateAtEOD.toEpochSecond() * 1000000000;
+        epochNanos930ET = TimeUtil.getEpochNanos( tradeDate, LocalTime.parse(TIME_OPENING), ET);
+        epochNanos400ET = TimeUtil.getEpochNanos( tradeDate, LocalTime.parse(TIME_CLOSING), ET);
 
         numPartitions = kafkaConfig.getNumPartitions();
 
@@ -95,7 +90,6 @@ public class StreamViewerApp implements ApplicationRunner {
         Set<String> optionNames = args.getOptionNames();
 
         if (args.containsOption(ARG_START_TIME)) {
-            System.out.println("mike");
             startFromBeginning = false;
             argStartTime = args.getOptionValues(ARG_START_TIME).get(0);
         }
@@ -103,19 +97,16 @@ public class StreamViewerApp implements ApplicationRunner {
         LOGGER.info("Processed arguments [start-time={}]", startFromBeginning ? "beginning" : argStartTime);
 
         stream(argStartTime);
-
     }
 
     private void stream(String argStartTime) {
 
         LocalTime startTime = LocalTime.parse(Optional.ofNullable(argStartTime).orElse(TIME_OPENING));
-        LocalDateTime localDateTime = startTime.atDate(LocalDate.parse("2019-05-01"));
-        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("America/New_York"));
-        long startTimeInEpochNanos = zonedDateTime.toEpochSecond() * 1000000000;
+        long startTimeInEpochNanos = TimeUtil.getEpochNanos( LocalDate.of(2019, 5, 1), startTime, ZoneId.of("America/New_York"));
 
         int partitionNum = calculatePartition(startTimeInEpochNanos);
 
-        LOGGER.info("Streaming session [startTime={}, topic={}, initial-partition={}]", localDateTime, kafkaConfig.getTopic(), partitionNum);
+        LOGGER.info("Streaming session [startTime={}, topic={}, initial-partition={}]", startTime, kafkaConfig.getTopic(), partitionNum);
 
         streamStartingAt(partitionNum, startTimeInEpochNanos);
     }
@@ -164,10 +155,8 @@ public class StreamViewerApp implements ApplicationRunner {
     private void pollForMessages(KafkaConsumer<String, byte[]> consumer, MessageParser parser) {
 
         ByteBuffer buf = ByteBuffer.allocate(10000);
-
         LoggingMessageListener l = new LoggingMessageListener();
 
-//        try {
         while (true) {
             // start polling...
             LOGGER.info("pollForMessages...polling...");
@@ -209,11 +198,8 @@ public class StreamViewerApp implements ApplicationRunner {
         buf.flip();
 
         long earliestInPartition = Message.parseEpochNanos(buf);
-        System.out.println("earliest: " + earliestInPartition);
-        System.out.println("msgType: " + Message.parseMsgType(buf));
 
         consumer.seekToEnd(Arrays.asList(topicPartition));
-        System.out.println("position: " + consumer.position(topicPartition));
         consumer.seek(topicPartition, consumer.position(topicPartition) - 1);
         record = consumer.poll(Duration.of(100, ChronoUnit.MILLIS));
 

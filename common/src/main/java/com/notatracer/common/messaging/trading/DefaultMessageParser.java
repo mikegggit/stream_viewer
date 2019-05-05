@@ -18,20 +18,18 @@ public class DefaultMessageParser implements MessageParser {
 
     @Override
     public void parse(ByteBuffer buf, Listener l) {
-        LOGGER.info(String.format("parse [position=%s, limit=%s, remaining=%s]", buf.position(), buf.limit(), buf.remaining()));
+        LOGGER.debug(String.format("parse [position=%s, limit=%s, remaining=%s]", buf.position(), buf.limit(), buf.remaining()));
         byte msgType = (byte) buf.get();
         LOGGER.debug(String.format("parse [msgType=%s]", (char)msgType));
 
         switch(msgType) {
             case (byte)'T':
-                LOGGER.debug("parse - tradeMessage");
                 tradeMessage.clear();
                 tradeMessage.setBuf(buf);
                 tradeMessage.parse(buf);
                 l.onTradeMessage(tradeMessage);
                 break;
             default:
-                LOGGER.debug("parse - unknown message type: " + (char)msgType);
                 l.onUnknownMessage();
         }
     }
