@@ -4,4 +4,5 @@ include ':common'
 include ':stream-to-kafka'
 include ':kafka-to-zip'
 include ':viewer'
+include ':kafka_streams_viewer'
 

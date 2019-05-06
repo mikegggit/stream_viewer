@@ -1,0 +1,43 @@
+apply plugin: 'org.springframework.boot'
+
+
+buildscript {
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+    maven {
+      url "http://packages.confluent.io/maven/"
+    }
+  }
+
+  dependencies {
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.3.RELEASE")
+  }
+}
+
+dependencies {
+  compile "com.notatracer.streamviewer:common:0.0.1"
+  compile("org.springframework.boot:spring-boot-starter-web:$versionSpringBoot")
+  compile group: 'org.apache.kafka', name: 'kafka-streams', version: '2.1.0'
+}
+
+configurations.all {
+  exclude group: "org.slf4j", module: "slf4j-log4j12"
+  exclude group: "log4j", module: "log4j"
+}
+
+bootJar {
+  mainClassName = 'com.notatracer.viewer.StreamViewerApp'
+}
+
+jar{
+  enabled=true
+  baseName = 'kafka_streams_viewer'
+  manifest {
+    attributes(
+            'Main-Class': 'com.notatracer.viewer.KafkaStreamsViewerApp'
+    )
+  }
+  //version = '0.1'
+}
